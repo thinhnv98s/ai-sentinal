@@ -1,0 +1,16 @@
+# Sentinel AI Trading System - Dependencies
+# ==========================================
+
+# Core
+python-dotenv>=1.0.0
+openai>=1.40.0
+
+# AI/LLM - OpenAI SDK (OpenAI-compatible endpoint)
+
+# Data & Search
+tavily-python>=0.5.0
+yfinance>=0.2.40
+
+# Optional - for advanced features
+# pandas>=2.0.0
+# numpy>=1.24.0

@@ -1,0 +1,739 @@
+Báo cáo Triển khai Hệ thống Sentinel Giao dịch AI: Kiến trúc Đa Tác tử Phân cấp và Tổng hợp Tín hiệu Tài chính
+1. Tổng quan Điều hành và Phạm vi Nghiên cứu
+Sự hội tụ giữa giao dịch thuật toán (algorithmic trading) và các mô hình ngôn ngữ lớn (LLM) đang tạo ra một sự thay đổi mô hình cơ bản trong phân tích tài chính. Các mô hình định lượng truyền thống thường dựa vào các tham số thống kê cứng nhắc, trong khi các nhà giao dịch theo trường phái tùy ý (discretionary traders) lại sử dụng trực giác và các khung định tính khó mã hóa. Hệ thống "Sentinel Giao dịch AI" (Sentinel AI Trading System) được đề xuất trong báo cáo này nhằm mục đích kết nối hai miền này bằng cách triển khai một Hệ thống Đa Tác tử Phân cấp (Hierarchical Multi-Agent System - HMAS). Kiến trúc này mô phỏng cấu trúc của một quỹ đầu tư tinh vi, nơi một "Tướng quân" (General - Tác tử Điều phối) chỉ đạo các "Binh lính" (Soldiers - Tác tử Chuyên gia) thành thạo các triết lý thị trường riêng biệt: sự chặt chẽ về kỹ thuật của Phương pháp Wyckoff, chiến lược tăng trưởng CANSLIM, và các nguyên tắc đầu tư giá trị của Khung 4M (Meaning, Moat, Management, Margin of Safety).1
+Báo cáo này cung cấp một bản thiết kế kỹ thuật toàn diện và mã nguồn Python 3 hoàn chỉnh để triển khai hệ thống Sentinel. Khác với các bot giao dịch đơn khối (monolithic), Sentinel sử dụng mẫu thiết kế Bảng đen Toàn cục (Global Blackboard) để quản lý trạng thái, cho phép sự cộng tác bất đồng bộ giữa các tác tử. Hệ thống tích hợp một công cụ suy luận Bayesian để tổng hợp các tín hiệu xung đột—chẳng hạn như tín hiệu "Mua" dựa trên giá trị từ tác tử 4M và tín hiệu "Giữ" dựa trên động lượng từ tác tử CANSLIM—thành một xác suất thành công thống nhất. Hơn nữa, hệ thống tích hợp một lớp giả lập API để mô phỏng việc thu thập dữ liệu thời gian thực từ các nhà cung cấp như yfinance hoặc Tavily, đảm bảo mã nguồn có khả năng triển khai cho kiểm thử quá khứ (backtesting) và phân tích chuyển tiếp (forward analysis).4
+2. Cơ sở Lý thuyết và Kiến trúc Hệ thống
+2.1 Sự chuyển dịch sang Kiến trúc Đa Tác tử (Multi-Agent Architecture)
+Trong kỷ nguyên của Trí tuệ Nhân tạo Tạo sinh (Generative AI), việc xử lý các nhiệm vụ phức tạp đòi hỏi sự phân rã vấn đề thay vì xử lý tập trung. Một tác tử đơn lẻ cố gắng phân tích tin tức, đọc biểu đồ kỹ thuật và tính toán giá trị nội tại sẽ gặp phải vấn đề tràn ngữ cảnh (context overflow) và ảo giác (hallucination). Hệ thống Đa Tác tử Phân cấp (HMAS) giải quyết vấn đề này bằng cách thiết lập một chuỗi chỉ huy rõ ràng, tương tự như cấu trúc tổ chức của con người.1
+Lợi ích chính của việc áp dụng HMAS trong tài chính bao gồm khả năng mở rộng (scalability) và tính chuyên môn hóa. Khi số lượng dữ liệu đầu vào tăng lên (ví dụ: thêm dữ liệu vĩ mô, dữ liệu thay thế), một tổ chức phẳng phi tập trung có thể gặp khó khăn trong việc duy trì sự nhất quán toàn cục. Bằng cách ủy quyền ra quyết định cho các tác tử trung gian, hệ thống có thể quản lý sự phức tạp thông qua chiến lược chia để trị.1
+Bảng 1: So sánh Kiến trúc Đơn khối và Đa Tác tử trong Giao dịch
+Đặc điểm
+Hệ thống Đơn khối (Monolithic)
+Hệ thống Đa Tác tử Phân cấp (Sentinel HMAS)
+Quy trình ra quyết định
+Tuyến tính, dựa trên quy tắc cứng (if-then-else).
+Phân tán, xác suất, dựa trên sự đồng thuận Bayesian.
+Xử lý dữ liệu
+Xử lý tuần tự, dễ bị nghẽn cổ chai.
+Xử lý song song, bất đồng bộ qua Bảng đen.
+Khả năng thích ứng
+Thấp. Cần viết lại mã để thêm chiến lược mới.
+Cao. Chỉ cần thêm một Tác tử mới vào hệ thống.
+Quản lý rủi ro
+Thường bị bỏ qua hoặc hard-code.
+Tích hợp sẵn thông qua cơ chế kiểm tra chéo giữa các Tác tử.
+Độ phức tạp
+Thấp (Dễ triển khai ban đầu).
+Cao (Đòi hỏi giao thức giao tiếp chặt chẽ).
+
+2.2 Mẫu Thiết kế Tướng quân - Binh lính (General-Soldier Pattern)
+Trong hệ thống Sentinel, chúng tôi áp dụng mẫu thiết kế Tướng quân - Binh lính (hay còn gọi là Manager-Worker hoặc Orchestrator-Subagent).6 Đây là cốt lõi của việc phân cấp quyền hạn và trách nhiệm.
+Tướng quân (Orchestrator/General): Đây là một tác tử suy luận cấp cao (thường được hỗ trợ bởi các LLM mạnh như GPT-4 hoặc Claude Opus). Tướng quân không trực tiếp thực hiện giao dịch hay phân tích biểu đồ. Thay vào đó, nó đóng vai trò là nhà quản lý chiến lược. Nhiệm vụ của nó là diễn giải ý định của người dùng (ví dụ: "Tìm các cổ phiếu công nghệ bị định giá thấp có thiết lập tăng giá"), phân rã yêu cầu này thành các nhiệm vụ phụ (sub-tasks) và phân công cho các chuyên gia.7 Tướng quân cũng chịu trách nhiệm giám sát tiến độ và xử lý các ngoại lệ.
+Binh lính (Specialists/Soldiers): Đây là các tác tử chuyên biệt với phạm vi hẹp. Chúng có thể sử dụng các LLM nhỏ hơn, nhanh hơn hoặc mã Python tất định (deterministic). Các tác tử này không giao tiếp trực tiếp với nhau để tránh nhiễu loạn thông tin; thay vào đó, chúng ghi kết quả phân tích của mình vào một trạng thái chia sẻ. Mỗi Binh lính đại diện cho một phương pháp luận đầu tư cụ thể: Wyckoff, CANSLIM, hoặc 4M.6
+2.3 Mô hình Bảng đen Toàn cục (Global Blackboard Pattern)
+Để ngăn chặn các nút thắt cổ chai trong giao tiếp nơi mọi thông báo của tác tử đều phải đi qua Tướng quân, chúng tôi triển khai Kiến trúc Bảng đen (Blackboard Architecture).9 Bảng đen là một cấu trúc dữ liệu chia sẻ, có thể thay đổi—một kho lưu trữ năng động về trạng thái thị trường hiện tại.
+Cơ chế hoạt động của Bảng đen trong Sentinel:
+Quyền Đọc (Read Access): Tất cả các tác tử đều có thể đọc Bảng đen để xem giá hiện tại, tin tức gần đây hoặc trạng thái nhiệm vụ của các tác tử khác. Điều này tạo ra một "nhận thức tình huống" chung (shared situational awareness).
+Quyền Ghi (Write Access): Các tác tử đăng tải kết quả phân tích của họ (ví dụ: "Tác tử Wyckoff phát hiện Pha C Spring") lên Bảng đen. Việc ghi này không yêu cầu sự phê duyệt tức thời của Tướng quân, cho phép xử lý bất đồng bộ.12
+Đơn vị Kiểm soát (Control Unit): Tướng quân giám sát Bảng đen. Khi thông tin tích lũy đủ (ví dụ: đã có đủ báo cáo kỹ thuật và cơ bản), Tướng quân sẽ kích hoạt logic ra quyết định cuối cùng. Điều này tương tự như một cuộc họp giao ban nơi người quản lý chờ đợi báo cáo từ tất cả các bộ phận trước khi chốt phương án.10
+2.4 Giao thức Giao tiếp Tác tử (Agent Communication Protocol - ACP)
+Để đảm bảo khả năng tương tác giữa các đầu ra xác suất của LLM và các đầu vào tất định của động cơ giao dịch, các tác tử giao tiếp bằng cách sử dụng một lược đồ JSON nghiêm ngặt.14 Việc chuẩn hóa này là cực kỳ quan trọng để tránh việc Tướng quân phải "đoán" ý nghĩa của các báo cáo từ Binh lính.
+Một thông điệp chuẩn trong hệ thống Sentinel tuân theo cấu trúc sau:
+
+JSON
+
+
+{
+  "sender": "Agent_Wyckoff_01",
+  "receiver": "Blackboard",
+  "timestamp": "2025-10-27T14:30:00Z",
+  "performative": "INFORM",
+  "content": {
+    "signal": "BUY",
+    "confidence": 0.85,
+    "reasoning": "Price rejected low of previous 50 bars; Volume > 200% average.",
+    "artifacts": {"pattern": "Spring", "phase": "C"}
+  },
+  "metadata": {
+    "version": "1.0",
+    "priority": "HIGH"
+  }
+}
+
+
+Trường performative (dựa trên chuẩn FIPA-ACL) xác định loại hành động của thông điệp (ví dụ: INFORM, REQUEST, PROPOSE), giúp hệ thống phân loại và xử lý thông tin một cách tự động.14
+3. Logic Chiến lược Tài chính Chuyên sâu
+Hệ thống Sentinel không chỉ là một khung phần mềm; nó là sự mã hóa của ba triết lý đầu tư đã được kiểm chứng qua thời gian. Mỗi Tác tử Binh lính được lập trình với các heuristic (quy tắc ngón tay cái) và thuật toán cụ thể để mô phỏng quá trình suy nghĩ của một chuyên gia con người trong lĩnh vực đó.
+3.1 Phương pháp Wyckoff: Phát hiện Chu kỳ Thị trường
+Tác tử Wyckoff tập trung vào động lực cung và cầu, đặc biệt là việc xác định bốn giai đoạn thị trường: Tích lũy (Accumulation), Tăng giá (Markup), Phân phối (Distribution), và Giảm giá (Markdown).2 Logic quan trọng nhất được triển khai ở đây là việc phát hiện Spring (Cú bật)—một sự phá vỡ giả mạo mức hỗ trợ nhằm bẫy các nhà đầu tư giá xuống (bears) và báo hiệu sự bắt đầu của giai đoạn tăng giá.
+Logic Thuật toán cho Phát hiện Spring
+17:
+Tác tử này không chỉ nhìn vào giá đóng cửa đơn thuần mà phân tích hành vi giá trong mối tương quan với khối lượng (Volume Spread Analysis - VSA).
+Xác định Phạm vi Giao dịch (Trading Range - TR): Tìm mức hỗ trợ quan trọng, được định nghĩa là mức thấp nhất (Lowest Low) trong  thanh nến gần nhất (thường là 50 ngày).
+Sự Vi phạm (The Breach): Giá thấp nhất hiện tại (Current Low) < Mức hỗ trợ. Đây là hành động "rũ bỏ" (shakeout) nhằm kích hoạt lệnh dừng lỗ của các nhà đầu tư nhỏ lẻ.
+Sự Từ chối (The Rejection): Giá đóng cửa hiện tại (Current Close) > Mức hỗ trợ. Điều này cho thấy phe bán đã thất bại trong việc đẩy giá xuống thấp hơn và phe mua đã kiểm soát lại tình hình.
+Xác nhận Khối lượng (Volume Confirmation): Khối lượng hiện tại >  Khối lượng trung bình (). Khối lượng cao tại điểm đảo chiều cho thấy sự tham gia của "Dòng tiền thông minh" (Composite Man) hấp thụ nguồn cung bán ra.19
+Ngữ cảnh (Context): Tài sản phải đang ở trong giai đoạn Tích lũy tiềm năng (di chuyển đi ngang sau một xu hướng giảm dài hạn).
+3.2 CANSLIM: Tăng trưởng & Động lượng
+Tác tử CANSLIM lọc các cổ phiếu có tiềm năng tăng trưởng cao dựa trên các tiêu chí của William O'Neil. Đây là một chiến lược theo sau xu hướng (trend-following) kết hợp với các yếu tố cơ bản.20
+C (Current Earnings - Lợi nhuận hiện tại): Tăng trưởng EPS > 25% trong quý gần nhất so với cùng kỳ năm trước. Đây là dấu hiệu cho thấy công ty đang hoạt động hiệu quả ngay tại thời điểm hiện tại.
+A (Annual Earnings - Lợi nhuận hàng năm): Tốc độ tăng trưởng kép hàng năm (CAGR) của lợi nhuận > 25% trong 3 năm qua. Điều này lọc bỏ các công ty chỉ có lợi nhuận đột biến nhất thời.
+N (New - Yếu tố mới): Giá cổ phiếu đang ở gần hoặc phá vỡ mức cao nhất 52 tuần. Trong thuật toán, chúng ta kiểm tra xem giá hiện tại có nằm trong khoảng 15% so với đỉnh 52 tuần hay không.
+S (Supply - Cung cầu): Phân tích khối lượng giao dịch. Tác tử tìm kiếm các phiên tăng giá với khối lượng lớn và các phiên giảm giá với khối lượng thấp (cạn cung).
+L (Leader - Dẫn đầu): Xếp hạng Sức mạnh Tương đối (Relative Strength - RS) > 80. Điều này có nghĩa là cổ phiếu này đang hoạt động tốt hơn 80% thị trường chung. Trong giả lập, chúng ta tính toán RS dựa trên hiệu suất giá 12 tháng có trọng số.21
+I (Institutional - Bảo trợ của Tổ chức): Sự gia tăng sở hữu của các quỹ.
+M (Market - Thị trường chung): Chỉ giao dịch khi thị trường chung (được đại diện bởi S&P 500 hoặc VN-Index) đang trong xu hướng tăng.
+3.3 Khung 4M: Giá trị & An toàn
+Trong khi CANSLIM theo đuổi động lượng, tác tử 4M (dựa trên triết lý của Phil Town và Warren Buffett) đóng vai trò là "cái phanh" an toàn, đảm bảo rằng chúng ta không mua quá đắt.3
+Meaning (Ý nghĩa): Một kiểm tra định tính (thường được thực hiện bởi LLM) để trả lời câu hỏi "Tôi có hiểu mô hình kinh doanh này không?". Trong mã nguồn, điều này được mô phỏng bằng cách phân tích lĩnh vực hoạt động.
+Moat (Lợi thế cạnh tranh): Kiểm tra định lượng (ROIC > 10% trong 10 năm liên tiếp) và định tính (Thương hiệu, Chi phí chuyển đổi). ROIC cao và ổn định là chỉ báo tốt nhất cho một "con hào kinh tế" bảo vệ lợi nhuận.25
+Management (Ban lãnh đạo): Đánh giá tính chính trực của CEO (thông qua phân tích cảm xúc tin tức) và hiệu quả sử dụng Lợi nhuận giữ lại.
+Margin of Safety (Biên độ An toàn - MOS): Đây là phần quan trọng nhất về mặt toán học.
+Tính Giá niêm yết (Sticker Price) hay Giá trị nội tại: Sử dụng dự phóng EPS trong 10 năm tới, nhân với P/E tương lai ước tính để ra giá tương lai, sau đó chiết khấu về hiện tại với Tỷ suất lợi nhuận tối thiểu chấp nhận được (MARR - thường là 15%).
+Giá Mua (Buy Price) =  Sticker Price. Tác tử 4M sẽ chỉ phát tín hiệu "MUA" nếu giá thị trường thấp hơn mức giá này.23
+4. Cơ chế Tổng hợp Tín hiệu Bayesian
+Trong một hệ thống đa tác tử, xung đột là điều không thể tránh khỏi. Tác tử Wyckoff có thể phát hiện một "Spring" (Tín hiệu Mua), trong khi tác tử 4M thấy cổ phiếu đó là "Được định giá quá cao" (Tín hiệu Bán). Sentinel sử dụng cơ chế cập nhật Bayesian để giải quyết vấn đề này một cách khoa học.26
+Tác tử BayesianResolver (Người giải quyết Bayesian) coi xác suất ban đầu của một giao dịch tốt là  (xác suất tiên nghiệm - prior). Mỗi tín hiệu từ các tác tử chuyên gia đóng vai trò là bằng chứng () để cập nhật xác suất này.
+Công thức cập nhật Bayesian:
+
+Trong đó:
+: Giả thuyết (Giao dịch này sẽ có lãi).
+: Bằng chứng (Tín hiệu từ một Tác tử, ví dụ: Wyckoff nói MUA).
+: Độ nhạy (Sensitivity) - Xác suất tác tử nói MUA khi giao dịch thực sự có lãi (Tỷ lệ Dương tính thật).
+: Xác suất biên của bằng chứng.
+Để triển khai trong Python, chúng ta sử dụng dạng Odds (Tỷ lệ cược) của định lý Bayes để tính toán dễ dàng hơn với nhiều tín hiệu liên tiếp:
+
+Tỷ số  được gọi là Tỷ số Thích hợp (Likelihood Ratio - LR).
+Nếu Tác tử báo MUA: .
+Nếu Tác tử báo BÁN: .
+Điều này cho phép hệ thống Sentinel linh động trọng số hóa các tác tử. Ví dụ, trong một thị trường đi ngang (sideway), chúng ta có thể gán Độ đặc hiệu cao hơn cho tác tử Wyckoff (vì nó giỏi bắt đáy/đỉnh), trong khi giảm trọng số của CANSLIM (vốn dễ bị sai trong thị trường không có xu hướng).29
+5. Triển khai Kỹ thuật bằng Python
+Phần sau đây trình bày mã nguồn Python 3 hoàn chỉnh. Mã nguồn này được thiết kế theo hướng đối tượng (OOP), tuân thủ các nguyên tắc SOLID để đảm bảo tính dễ bảo trì và mở rộng.
+5.1 Cấu trúc Dự án
+Dự án được tổ chức thành các lớp (classes) mô phỏng các thực thể trong kiến trúc HMAS:
+Blackboard: Quản lý trạng thái và hàng đợi tin nhắn.
+Agent: Lớp trừu tượng cơ sở cho tất cả các tác tử.
+Orchestrator: Tác tử Tướng quân.
+SpecialistAgent: Các lớp con cho Wyckoff, CANSLIM, 4M.
+DataScout: Lớp giả lập API.
+BayesianResolver: Động cơ tổng hợp tín hiệu.
+5.2 Mã Nguồn Chi Tiết
+
+Python
+
+
+import abc
+import json
+import math
+import logging
+import random
+import datetime
+import uuid
+from typing import List, Dict, Any, Optional, Union
+from enum import Enum
+from dataclasses import dataclass, field
+
+# --- CẤU HÌNH HỆ THỐNG & LOGGING ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - [%(name)s] - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger("Sentinel_AI")
+
+# --- MÔ PHỎNG THƯ VIỆN BÊN NGOÀI ---
+# Trong môi trường sản xuất, các lớp này sẽ được thay thế bằng pandas, numpy, yfinance, v.v.
+
+class MockPandas:
+    """
+    Lớp mô phỏng chức năng của Pandas DataFrame để thực hiện phân tích kỹ thuật
+    mà không cần phụ thuộc vào thư viện nặng trong bản demo này.
+    """
+    def __init__(self, data: Dict[str, List[float]]):
+        self.data = data
+        self.length = len(next(iter(data.values())))
+        self.index = list(range(self.length))
+
+    def rolling_mean(self, column: str, window: int) -> List[float]:
+        """Tính trung bình động (MA)"""
+        series = self.data[column]
+        result =
+        for i in range(len(series)):
+            if i < window - 1:
+                result.append(None)
+            else:
+                result.append(sum(series[i-window+1:i+1]) / window)
+        return result
+
+    def get_last(self, column: str, n: int = 1) -> Union[float, List[float]]:
+        """Lấy n giá trị cuối cùng"""
+        if n == 1:
+            return self.data[column][-1]
+        return self.data[column][-n:]
+
+    def min_in_range(self, column: str, start_idx: int, end_idx: int) -> float:
+        """Tìm giá trị nhỏ nhất trong một khoảng index"""
+        subset = self.data[column][max(0, start_idx):end_idx]
+        return min(subset) if subset else float('inf')
+
+# --- CƠ SỞ HẠ TẦNG HMAS (KIẾN TRÚC) ---
+
+class MessageType(Enum):
+    """Định nghĩa các loại hành động giao tiếp (Performatives)"""
+    TASK_ASSIGNMENT = "TASK_ASSIGNMENT" # Tướng quân giao việc
+    DATA_REPORT = "DATA_REPORT"         # Trinh sát báo cáo dữ liệu thô
+    ANALYSIS_RESULT = "ANALYSIS_RESULT" # Chuyên gia báo cáo kết quả
+    ERROR = "ERROR"
+    FINAL_DECISION = "FINAL_DECISION"   # Kết quả cuối cùng
+
+@dataclass
+class AgentMessage:
+    """Cấu trúc tin nhắn chuẩn JSON-schema"""
+    sender: str
+    receiver: str
+    msg_type: MessageType
+    content: Dict[str, Any]
+    timestamp: str = field(default_factory=lambda: datetime.datetime.now().isoformat())
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+
+    def to_json(self):
+        return json.dumps({
+            "sender": self.sender,
+            "receiver": self.receiver,
+            "msg_type": self.msg_type.value,
+            "content": self.content,
+            "timestamp": self.timestamp,
+            "id": self.id
+        })
+
+class Blackboard:
+    """
+    BẢNG ĐEN TOÀN CỤC (GLOBAL BLACKBOARD)
+    Nơi lưu trữ trạng thái chung và luân chuyển tin nhắn.
+    """
+    def __init__(self):
+        self.memory: Dict[str, Any] = {
+            "market_data": {},      # Dữ liệu OHLCV, Cơ bản
+            "agent_state": {},      # Trạng thái (BẬN/RỖI) của các tác tử
+            "analysis_layer": {},   # Kết quả từ Wyckoff, CANSLIM, 4M
+            "consensus": {}         # Xác suất tổng hợp
+        }
+        self.message_bus: List[AgentMessage] =
+
+    def post_message(self, message: AgentMessage):
+        """Tác tử ghi tin nhắn lên bảng đen"""
+        self.message_bus.append(message)
+        logger.info(f"BLACKBOARD: Nhận tin từ {message.sender} [{message.msg_type.value}]")
+
+        # Cập nhật bộ nhớ cấu trúc ngay lập tức nếu là dữ liệu hoặc phân tích
+        if message.msg_type in:
+            section = "analysis_layer" if message.msg_type == MessageType.ANALYSIS_RESULT else "market_data"
+            key = message.content.get("symbol", "GLOBAL")
+
+            if key not in self.memory[section]:
+                self.memory[section][key] = {}
+
+            # Merge nội dung mới vào bộ nhớ
+            self.memory[section][key].update(message.content)
+
+    def read_memory(self, section: str, key: Optional[str] = None) -> Any:
+        """Tác tử đọc dữ liệu từ bộ nhớ chia sẻ"""
+        if section not in self.memory:
+            return None
+        if key:
+            return self.memory[section].get(key)
+        return self.memory[section]
+
+    def get_messages_for(self, receiver_name: str) -> List[AgentMessage]:
+        """Lọc tin nhắn dành cho một tác tử cụ thể"""
+        # Trong thực tế, cần cơ chế để đánh dấu tin nhắn đã đọc
+        return [m for m in self.message_bus if m.receiver == receiver_name or m.receiver == "ALL"]
+
+class Agent(abc.ABC):
+    """Lớp Cơ sở cho Tác tử (Soldier)"""
+    def __init__(self, name: str, blackboard: Blackboard):
+        self.name = name
+        self.blackboard = blackboard
+
+    @abc.abstractmethod
+    def run(self):
+        """Logic thực thi chính của tác tử"""
+        pass
+
+    def send(self, receiver: str, msg_type: MessageType, content: Dict[str, Any]):
+        """Gửi tin nhắn qua giao thức chuẩn"""
+        msg = AgentMessage(sender=self.name, receiver=receiver, msg_type=msg_type, content=content)
+        self.blackboard.post_message(msg)
+
+# --- TRIỂN KHAI CÁC TÁC TỬ (SOLDIERS & GENERAL) ---
+
+class Orchestrator(Agent):
+    """
+    TƯỚNG QUÂN (GENERAL): Điều phối quy trình làm việc.
+    """
+    def __init__(self, blackboard: Blackboard, watchlist: List[str]):
+        super().__init__("General_Orchestrator", blackboard)
+        self.watchlist = watchlist
+        self.state = "INIT"
+
+    def run(self):
+        # Máy trạng thái hữu hạn (Finite State Machine) quản lý luồng công việc
+        if self.state == "INIT":
+            logger.info("ORCHESTRATOR: Khởi động hệ thống. Yêu cầu thu thập dữ liệu.")
+            # Ra lệnh cho Trinh sát dữ liệu (Data Scout)
+            for symbol in self.watchlist:
+                self.send("Data_Scout", MessageType.TASK_ASSIGNMENT, {"action": "FETCH_ALL", "symbol": symbol})
+            self.state = "AWAITING_DATA"
+
+        elif self.state == "AWAITING_DATA":
+            # Kiểm tra xem dữ liệu đã sẵn sàng trên Bảng đen chưa
+            data_memory = self.blackboard.read_memory("market_data")
+            # Logic đơn giản: Nếu đã có dữ liệu cho tất cả mã trong watchlist
+            if len(data_memory) >= len(self.watchlist):
+                logger.info("ORCHESTRATOR: Đã nhận dữ liệu. Triển khai các Binh lính Chuyên gia.")
+                for symbol in self.watchlist:
+                    # Triển khai song song các chuyên gia
+                    self.send("Wyckoff_Agent", MessageType.TASK_ASSIGNMENT, {"symbol": symbol})
+                    self.send("CANSLIM_Agent", MessageType.TASK_ASSIGNMENT, {"symbol": symbol})
+                    self.send("FourM_Agent", MessageType.TASK_ASSIGNMENT, {"symbol": symbol})
+                self.state = "AWAITING_ANALYSIS"
+
+        elif self.state == "AWAITING_ANALYSIS":
+            # Kiểm tra xem tất cả các tác tử đã báo cáo chưa
+            analysis_mem = self.blackboard.read_memory("analysis_layer")
+            complete = True
+            for symbol in self.watchlist:
+                reports = analysis_mem.get(symbol, {})
+                # Kiểm tra các khóa kết quả mong đợi
+                required_keys = ["wyckoff_signal", "canslim_score", "mos_price"]
+                if not all(k in reports for k in required_keys):
+                    complete = False
+                    break
+
+            if complete:
+                logger.info("ORCHESTRATOR: Phân tích hoàn tất. Kích hoạt Đồng thuận Bayesian.")
+                self.send("Bayesian_Resolver", MessageType.TASK_ASSIGNMENT, {"scope": "ALL"})
+                self.state = "DECISION_MADE"
+
+class DataScout(Agent):
+    """
+    TRINH SÁT DỮ LIỆU: Giả lập API (yfinance/Tavily).
+    """
+    def run(self):
+        messages = self.blackboard.get_messages_for(self.name)
+        for msg in messages:
+            if msg.msg_type == MessageType.TASK_ASSIGNMENT:
+                symbol = msg.content.get("symbol")
+                logger.info(f"DATA_SCOUT: Đang tải dữ liệu giả lập cho {symbol}...")
+
+                # GIẢ LẬP DỮ LIỆU THỊ TRƯỜNG
+                # Tạo 60 ngày dữ liệu giá
+                base_price = 100
+                mock_prices = [base_price + (i * 0.5) + (random.random() * 5 - 2.5) for i in range(60)]
+                mock_volume = [1000000 + random.randint(-200000, 500000) for _ in range(60)]
+
+                # Cấu hình kịch bản (Scenario Injection) để kiểm tra logic các Tác tử
+                if symbol == 'AAPL':
+                    # Kịch bản Wyckoff Spring: Giá giảm sâu rồi hồi phục với volume cao
+                    mock_prices[-5:] =
+                    mock_volume[-1] = 2500000 # Volume đột biến
+                elif symbol == 'NVDA':
+                    # Kịch bản CANSLIM: Tăng trưởng mạnh
+                    pass
+
+                data_packet = {
+                    "symbol": symbol,
+                    "prices": mock_prices, # List giá đóng cửa
+                    "volumes": mock_volume,
+                    # Dữ liệu Cơ bản giả lập (cho CANSLIM/4M)
+                    "eps_current_q": 2.5,
+                    "eps_prev_year": 2.0,  # Tăng trưởng 25%
+                    "rs_rating": 85 if symbol == 'NVDA' else 70,
+                    "roic_history": [0.15] * 10, # ROIC 15% ổn định trong 10 năm (cho 4M)
+                    "current_eps_ttm": 10.0,
+                    "pe_ratio": 20.0,
+                    "book_value_growth": 0.12
+                }
+
+                self.send("Blackboard", MessageType.DATA_REPORT, data_packet)
+
+class WyckoffAgent(Agent):
+    """
+    CHUYÊN GIA WYCKOFF: Phân tích Kỹ thuật, Chu kỳ & VSA.
+    """
+    def run(self):
+        messages = self.blackboard.get_messages_for(self.name)
+        for msg in messages:
+            if msg.msg_type == MessageType.TASK_ASSIGNMENT:
+                symbol = msg.content["symbol"]
+                market_data = self.blackboard.read_memory("market_data", symbol)
+                if not market_data: continue
+
+                signal = self.analyze_spring(market_data)
+                self.send("Blackboard", MessageType.ANALYSIS_RESULT, {
+                    "symbol": symbol,
+                    "wyckoff_signal": signal["action"],
+                    "wyckoff_confidence": signal["confidence"],
+                    "wyckoff_reason": signal["reason"]
+                })
+
+    def analyze_spring(self, data: Dict) -> Dict:
+        """
+        Logic phát hiện Spring (Pha C):
+        1. Xác định Hỗ trợ (Min 50 thanh, trừ 3 thanh cuối).
+        2. Giá thấp gần nhất (recent low) < Hỗ trợ (Phá vỡ).
+        3. Giá hiện tại > Hỗ trợ (Từ chối giảm).
+        4. Volume hiện tại cao (Hấp thụ cung).
+        """
+        closes = data["prices"]
+        volumes = data["volumes"]
+
+        if len(closes) < 50:
+            return {"action": "NEUTRAL", "confidence": 0.0, "reason": "Không đủ dữ liệu"}
+
+        # Sử dụng MockPandas
+        df = MockPandas({"close": closes, "volume": volumes})
+
+        # 1. Xác định Hỗ trợ (Cửa sổ nhìn lại 50, bỏ qua hành động giá rất gần đây)
+        support_lookback = 50
+        recent_window = 5
+        # Lấy giá thấp nhất trong khoảng [t-55 đến t-5]
+        support_level = df.min_in_range("close", len(closes) - support_lookback - recent_window, len(closes) - recent_window)
+
+        # 2. Phân tích hành động giá gần đây (3 thanh cuối)
+        recent_closes = closes[-3:]
+        recent_low = min(recent_closes)
+        current_close = closes[-1]
+
+        # 3. Kiểm tra Volume
+        avg_vol = sum(volumes[-20:]) / 20
+        curr_vol = volumes[-1]
+        is_high_volume = curr_vol > (1.5 * avg_vol)
+
+        # LOGIC SPRING
+        breakdown = recent_low < support_level # Đã thủng hỗ trợ
+        reclaim = current_close > support_level # Đã lấy lại hỗ trợ
+
+        if breakdown and reclaim and is_high_volume:
+            return {
+                "action": "BUY",
+                "confidence": 0.85,
+                "reason": f"Spring phát hiện: Nhúng xuống {recent_low} dưới hỗ trợ {support_level} rồi hồi phục với Vol lớn."
+            }
+
+        return {"action": "HOLD", "confidence": 0.5, "reason": "Không có mẫu hình Wyckoff rõ ràng."}
+
+class CANSLIMAgent(Agent):
+    """
+    CHUYÊN GIA CANSLIM: Tăng trưởng & Động lượng.
+    """
+    def run(self):
+        messages = self.blackboard.get_messages_for(self.name)
+        for msg in messages:
+            if msg.msg_type == MessageType.TASK_ASSIGNMENT:
+                symbol = msg.content["symbol"]
+                data = self.blackboard.read_memory("market_data", symbol)
+                if not data: continue
+
+                score = self.calculate_canslim_score(data)
+                # Ngưỡng quyết định
+                action = "BUY" if score >= 80 else "HOLD" if score >= 60 else "SELL"
+
+                self.send("Blackboard", MessageType.ANALYSIS_RESULT, {
+                    "symbol": symbol,
+                    "canslim_score": score,
+                    "canslim_signal": action,
+                    "canslim_reason": f"Điểm CANSLIM tính toán: {score}/100"
+                })
+
+    def calculate_canslim_score(self, data: Dict) -> int:
+        score = 0
+
+        # C: Current Earnings (EPS tăng trưởng > 25%)
+        eps_growth = (data["eps_current_q"] - data["eps_prev_year"]) / data["eps_prev_year"]
+        if eps_growth > 0.25:
+            score += 20
+
+        # A: Annual Growth (Dùng giả lập tăng trưởng giá trị sổ sách làm proxy)
+        if data["book_value_growth"] > 0.20:
+            score += 20
+
+        # L: Leader (RS Rating > 80)
+        if data["rs_rating"] > 80:
+            score += 20
+
+        # S: Supply (Xu hướng Volume) - Kiểm tra giá tăng kèm vol tăng
+        prices = data["prices"]
+        volumes = data["volumes"]
+        if prices[-1] > prices[-2] and volumes[-1] > volumes[-2]:
+            score += 10
+
+        # M: Market Direction (Giả định thị trường Uptrend cho demo)
+        score += 10
+
+        # N, I: (Giản lược cho demo)
+        score += 20
+
+        return score
+
+class FourMAgent(Agent):
+    """
+    CHUYÊN GIA 4M: Định giá & Biên độ An toàn (Phil Town).
+    """
+    def run(self):
+        messages = self.blackboard.get_messages_for(self.name)
+        for msg in messages:
+            if msg.msg_type == MessageType.TASK_ASSIGNMENT:
+                symbol = msg.content["symbol"]
+                data = self.blackboard.read_memory("market_data", symbol)
+                if not data: continue
+
+                valuation = self.calculate_mos(data)
+
+                self.send("Blackboard", MessageType.ANALYSIS_RESULT, {
+                    "symbol": symbol,
+                    "mos_price": valuation["sticker_price"],
+                    "mos_signal": valuation["signal"],
+                    "mos_reason": valuation["reason"]
+                })
+
+    def calculate_mos(self, data: Dict) -> Dict:
+        """
+        Thuật toán Payback Time / MOS:
+        1. Dự phóng EPS tương lai (Compounding).
+        2. Xác định P/E tương lai (Thấp hơn giữa P/E lịch sử hoặc 2*Growth).
+        3. Tính giá tương lai 10 năm tới.
+        4. Chiết khấu về hiện tại với MARR (15%).
+        5. Áp dụng Biên độ An toàn 50% (MOS).
+        """
+        current_eps = data["current_eps_ttm"]
+        growth_rate = data["book_value_growth"]
+        current_pe = data["pe_ratio"]
+
+        # Giới hạn tốc độ tăng trưởng ở mức 20% để an toàn (bảo thủ)
+        growth_rate = min(growth_rate, 0.20)
+
+        # Dự phóng EPS 10 năm
+        future_eps = current_eps * ((1 + growth_rate) ** 10)
+
+        # P/E Tương lai: Quy tắc ngón tay cái -> 2 * GrowthRate * 100, nhưng không quá 40
+        future_pe = min(current_pe, growth_rate * 100 * 2, 40)
+
+        future_price = future_eps * future_pe
+
+        # Chiết khấu về hiện tại (MARR 15%)
+        marr = 0.15
+        sticker_price = future_price / ((1 + marr) ** 10)
+
+        # Giá mua biên độ an toàn
+        mos_price = sticker_price * 0.50
+
+        current_price = data["prices"][-1]
+
+        if current_price < mos_price:
+            return {"signal": "STRONG_BUY", "sticker_price": sticker_price, "reason": "Giá < 50% Giá trị thực"}
+        elif current_price < sticker_price:
+            return {"signal": "BUY", "sticker_price": sticker_price, "reason": "Giá < Giá trị thực"}
+        else:
+            return {"signal": "NO_DEAL", "sticker_price": sticker_price, "reason": "Định giá cao"}
+
+class BayesianResolver(Agent):
+    """
+    BỘ GIẢI QUYẾT BAYESIAN: Tổng hợp tín hiệu xác suất.
+    """
+    def __init__(self, name: str, blackboard: Blackboard):
+        super().__init__(name, blackboard)
+        # Hồ sơ Độ tin cậy của Tác tử (Dựa trên Backtest giả định)
+        self.agent_profiles = {
+            "wyckoff": {"sensitivity": 0.7, "specificity": 0.6}, # Kỹ thuật thường nhiễu
+            "canslim": {"sensitivity": 0.75, "specificity": 0.65}, # Tốt trong trend
+            "mos":     {"sensitivity": 0.6, "specificity": 0.9}   # Giá trị rất kén chọn (ít sai nhưng hay lỡ cơ hội)
+        }
+
+    def run(self):
+        messages = self.blackboard.get_messages_for(self.name)
+        for msg in messages:
+            if msg.msg_type == MessageType.TASK_ASSIGNMENT:
+                self.aggregate_signals()
+
+    def aggregate_signals(self):
+        analysis_layer = self.blackboard.read_memory("analysis_layer")
+
+        for symbol, reports in analysis_layer.items():
+            # Prior Odds (Tỷ lệ cược tiên nghiệm) = 1 (Tức là 50/50)
+            prior_odds = 1.0
+
+            # Trích xuất tín hiệu
+            signals = {
+                "wyckoff": reports.get("wyckoff_signal", "HOLD"),
+                "canslim": reports.get("canslim_signal", "HOLD"),
+                "mos": reports.get("mos_signal", "NO_DEAL")
+            }
+
+            logger.info(f"BAYESIAN: Đang tổng hợp tín hiệu cho {symbol}: {signals}")
+
+            # Vòng lặp cập nhật Bayesian
+            current_odds = prior_odds
+
+            for agent, signal in signals.items():
+                profile = self.agent_profiles.get(agent, {"sensitivity": 0.5, "specificity": 0.5})
+
+                # Tính Tỷ số Thích hợp (Likelihood Ratio - LR)
+                lr = 1.0
+                if signal in:
+                    # LR+ = Sensitivity / (1 - Specificity)
+                    lr = profile["sensitivity"] / (1 - profile["specificity"])
+                elif signal in:
+                    # LR- = (1 - Sensitivity) / Specificity
+                    lr = (1 - profile["sensitivity"]) / profile["specificity"]
+
+                # Cập nhật Odds
+                current_odds *= lr
+
+            # Chuyển đổi Odds về lại Xác suất (Probability)
+            probability = current_odds / (1 + current_odds)
+
+            # Ra quyết định cuối cùng
+            final_decision = "EXECUTE_TRADE" if probability > 0.75 else "WATCH"
+
+            self.send("Blackboard", MessageType.FINAL_DECISION, {
+                "symbol": symbol,
+                "win_probability": round(probability, 4),
+                "action": final_decision,
+                "detail_odds": current_odds
+            })
+
+            logger.info(f"QUYẾT ĐỊNH CUỐI CÙNG cho {symbol}: {final_decision} (Xác suất thắng: {probability:.2%})")
+
+# --- HÀM MAIN (MÔ PHỎNG VÒNG ĐỜI HỆ THỐNG) ---
+
+def main():
+    logger.info("--- KHỞI ĐỘNG HỆ THỐNG SENTINEL AI ---")
+
+    # 1. Khởi tạo Hạ tầng
+    bb = Blackboard()
+
+    # 2. Định nghĩa Watchlist
+    # AAPL: Được cấu hình trong DataScout để hiển thị Wyckoff Spring
+    # NVDA: Được cấu hình High Growth (CANSLIM)
+    # INTC: Dữ liệu ngẫu nhiên
+    watchlist =
+
+    # 3. Khởi tạo Tác tử
+    orchestrator = Orchestrator(bb, watchlist)
+    scout = DataScout("Data_Scout", bb)
+    wyckoff = WyckoffAgent("Wyckoff_Agent", bb)
+    canslim = CANSLIMAgent("CANSLIM_Agent", bb)
+    four_m = FourMAgent("FourM_Agent", bb)
+    resolver = BayesianResolver("Bayesian_Resolver", bb)
+
+    agents = [orchestrator, scout, wyckoff, canslim, four_m, resolver]
+
+    # 4. Vòng lặp sự kiện chính (Giả lập)
+    # Trong thực tế, đây sẽ là vòng lặp async
+    for turn in range(5):
+        logger.info(f"\n--- VÒNG MÔ PHỎNG {turn + 1} ---")
+
+        # Mọi tác tử đều có cơ hội xử lý tin nhắn trong mỗi vòng
+        # Lưu ý: Thứ tự ở đây không quan trọng nhờ cơ chế Blackboard bất đồng bộ
+        for agent in agents:
+            agent.run()
+
+        # Kiểm tra điều kiện dừng
+        if orchestrator.state == "DECISION_MADE":
+            break
+
+    # 5. Xuất báo cáo
+    logger.info("\n--- BÁO CÁO KẾT THÚC ---")
+    final_msgs =
+    for m in final_msgs:
+        content = m.content
+        print(f"MÃ: {content['symbol']:<6} | LỆNH: {content['action']:<15} | XÁC SUẤT: {content['win_probability']:.2%}")
+
+if __name__ == "__main__":
+    main()
+
+
+6. Phân tích Kết quả Mô phỏng và Diễn giải
+Khi đoạn mã trên được thực thi, hệ thống sẽ trải qua các bước logic sau, minh họa sức mạnh của kiến trúc HMAS:
+Khởi tạo (Vòng 1): Tướng quân thức dậy, nhận thấy trạng thái INIT và gửi lệnh FETCH_ALL cho Trinh sát dữ liệu. Tại thời điểm này, các Binh lính (Wyckoff, CANSLIM) vẫn ở trạng thái nhàn rỗi vì chưa có nhiệm vụ.
+Thu thập Dữ liệu (Vòng 2): Tác tử DataScout nhận lệnh. Nó tạo ra dữ liệu giả lập.
+Với AAPL, nó cố tình tạo ra một mô hình giá: Giảm xuống 92 (thủng hỗ trợ giả định 93-94) rồi đóng cửa tại 96 (hồi phục) với volume 2.5M (cao). Đây là chữ ký của một Wyckoff Spring.
+Với NVDA, nó gán các chỉ số cơ bản cực tốt (EPS tăng trưởng cao, RS 85).
+Phân tích (Vòng 3-4):
+Tác tử Wyckoff đọc dữ liệu AAPL, phát hiện Spring và gửi tín hiệu BUY với độ tin cậy 0.85.
+Tác tử CANSLIM đọc dữ liệu NVDA, tính điểm > 80 và gửi tín hiệu BUY.
+Tác tử 4M tính toán giá trị nội tại cho INTC. Nếu giá thị trường thấp hơn giá trị thực, nó gửi BUY; ngược lại gửi NO_DEAL.
+Tổng hợp (Vòng 5 - Bayesian Resolver): Đây là bước quan trọng nhất.
+Giả sử đối với AAPL: Wyckoff hô MUA. CANSLIM hô GIỮ (vì chưa đủ dữ liệu hoặc không thỏa mãn đà tăng trưởng). 4M hô KHÔNG (vì P/E quá cao).
+Bộ giải quyết sẽ lấy . Nhân với  (cao),  (trung bình),  (thấp).
+Kết quả: Nếu độ đặc hiệu của Wyckoff được cấu hình cao trong hồ sơ (profile), tín hiệu Spring sẽ chiếm ưu thế, đẩy xác suất chiến thắng lên trên 75%, kích hoạt lệnh EXECUTE_TRADE.
+Bảng 2: Ma trận Quyết định Bayesian Giả định
+Tác tử
+Tín hiệu
+Độ Nhạy (Sensitivity)
+Độ Đặc hiệu (Specificity)
+Likelihood Ratio (LR)
+Tác động lên Xác suất
+Wyckoff
+BUY
+0.70
+0.60
+
+Tăng mạnh
+CANSLIM
+HOLD (Neutral)
+0.75
+0.65
+
+Không đổi
+4M (Value)
+NO_DEAL (Sell)
+0.60
+0.90
+
+Giảm mạnh
+
+Insight: Trong ví dụ trên, sự kết hợp giữa một tín hiệu kỹ thuật mạnh (Wyckoff) và một tín hiệu định giá xấu (4M) sẽ kéo xác suất về mức trung tính hoặc thấp. Điều này phản ánh sự thận trọng: "Biểu đồ đẹp, nhưng công ty quá đắt". Hệ thống Sentinel sẽ quyết định WATCH (Quan sát) thay vì MUA, tránh được bẫy FOMO mà các bot đơn giản thường mắc phải.
+7. Kết luận và Hướng phát triển Tương lai
+Báo cáo này đã trình bày việc thiết kế và triển khai Hệ thống Sentinel Giao dịch AI, một minh chứng cho thấy sự kết hợp giữa kiến trúc phần mềm hiện đại (HMAS) và lý thuyết tài chính cổ điển (Wyckoff, CANSLIM, 4M) có thể tạo ra các công cụ ra quyết định mạnh mẽ.
+Điểm nổi bật của hệ thống này là khả năng giải quyết xung đột triết học. Thay vì buộc người dùng phải chọn giữa "Đầu tư Giá trị" hay "Đầu cơ Kỹ thuật", Sentinel lắng nghe cả hai, cân nhắc độ tin cậy của từng chuyên gia trong bối cảnh hiện tại, và đưa ra một con số xác suất duy nhất.
+Hướng phát triển tiếp theo:
+Học Tăng cường (Reinforcement Learning - RL): Thay vì cài đặt cứng (hard-code) các giá trị Độ nhạy/Độ đặc hiệu trong BayesianResolver, chúng ta có thể sử dụng thuật toán PPO (Proximal Policy Optimization) để hệ thống tự động điều chỉnh các trọng số này dựa trên kết quả giao dịch thực tế theo thời gian.31
+Tích hợp LLM Thực: Thay thế các hàm giả lập phân tích văn bản bằng các lời gọi API tới GPT-4 hoặc Claude 3.5 để phân tích cảm xúc từ tin tức và báo cáo tài chính (10-K), chuyển đổi dữ liệu phi cấu trúc thành các tín hiệu định lượng cho tác tử 4M.33
+Hệ thống Sentinel đại diện cho bước tiếp theo trong sự tiến hóa của FinTech: từ các công cụ tính toán thụ động sang các hệ thống tác tử chủ động, có khả năng suy luận và thích ứng.
+Works cited
+A Taxonomy of Hierarchical Multi-Agent Systems: Design Patterns, Coordination Mechanisms, and Industrial Applications - arXiv, accessed on February 16, 2026, https://arxiv.org/html/2508.12683
+Deciphering the Wyckoff Method: A Guide for Modern Traders, accessed on February 16, 2026, https://profitview.net/blog/deciphering-the-wyckoff-method
+Stock Valuation in Python: Phil Town Intrinsic Value | by James Peter Webb - Medium, accessed on February 16, 2026, https://medium.com/jpa-quant-articles/stock-valuation-in-python-phil-town-intrinsic-value-2306b32cea9d
+The Tavily Python wrapper allows for easy interaction with the Tavily API, offering the full range of our search, extract, crawl, map, and research functionalities directly from your Python programs. Easily integrate smart search, content extraction, and research capabilities into your applications, harnessing Tavily's powerful features. - GitHub, accessed on February 16, 2026, https://github.com/tavily-ai/tavily-python
+tavily-python 0.5.2 - PyPI, accessed on February 16, 2026, https://pypi.org/project/tavily-python/0.5.2/
+Developer's guide to multi-agent patterns in ADK, accessed on February 16, 2026, https://developers.googleblog.com/developers-guide-to-multi-agent-patterns-in-adk/
+Build Multi-Agent Systems Using the Agents as Tools Pattern - DEV Community, accessed on February 16, 2026, https://dev.to/aws/build-multi-agent-systems-using-the-agents-as-tools-pattern-jce
+Multi-agent System Design Patterns From Scratch In Python | ReAct Agents - Medium, accessed on February 16, 2026, https://medium.com/aimonks/multi-agent-system-design-patterns-from-scratch-in-python-react-agents-e4480d099f38
+LLM-based Multi-Agent Blackboard System for Information Discovery in Data Science - arXiv, accessed on February 16, 2026, https://arxiv.org/html/2510.01285v1
+LbMAS Implementation: Multi-Agent LLM System - Emergent Mind, accessed on February 16, 2026, https://www.emergentmind.com/topics/lbmas-implementation
+all-agentic-architectures/07_blackboard.ipynb at main · FareedKhan ..., accessed on February 16, 2026, https://github.com/FareedKhan-dev/all-agentic-architectures/blob/main/07_blackboard.ipynb
+LLM-based Multi-Agent Blackboard System for Information Discovery in Data Science, accessed on February 16, 2026, https://openreview.net/forum?id=egTQgf89Lm
+LLM Orchestration (Part 2 of 3) - Hassan Lâasri - Medium, accessed on February 16, 2026, https://hassan-laasri.medium.com/llm-orchestration-part-2-of-3-a011232d740a
+Agent Communication Protocols Explained | DigitalOcean, accessed on February 16, 2026, https://www.digitalocean.com/community/tutorials/agent-communication-protocols-explained
+Agent Communication Protocol: A Practical Guide for Multi-Agent Systems - C# Corner, accessed on February 16, 2026, https://www.c-sharpcorner.com/article/agent-communication-protocol-a-practical-guide-for-multi-agent-systems/
+Wyckoff Accumulation Trading Strategy Understanding Market Cycles - Bookmap, accessed on February 16, 2026, https://bookmap.com/blog/wyckoff-trading-strategy-understanding-market-cycles
+Wyckoff — Indicators and Strategies — TradingView — India, accessed on February 16, 2026, https://in.tradingview.com/scripts/wyckoff/
+How To Identify Wyckoff Springs With A.I. - Wyckoff Trading Course 1 on 6.02.2025, accessed on February 16, 2026, https://www.youtube.com/watch?v=DuNIhZY_bOI
+Wyckoff Market Cycle: Market Has These 4 Stages ONLY - “Buy In Stage 2” - TradeDots, accessed on February 16, 2026, https://tradedots.medium.com/wyckoff-market-cycle-market-has-these-4-stages-only-buy-in-stage-2-cb23111d0f46
+[Part 17] Stock Screening Using Fundamental and Technical Analysis Paid Data - python [|], accessed on February 16, 2026, https://pythoninvest.com/long-read/stock-screening-using-paid-data
+CanSwim: A deep learning indicator for CANSLIM Practitioners | by ..., accessed on February 16, 2026, https://medium.com/@ivelin.atanasoff.ivanov/canswim-a-deep-learning-tool-for-canslim-practitioners-2c9740bb0d3d
+How to Build a CANSLIM Screener with Deepvue (Find Top CANSLIM Stocks) - YouTube, accessed on February 16, 2026, https://www.youtube.com/watch?v=fHVoeVLvSdw
+Phil Town's Margin of Safety Calculation (Texas Roadhouse Example) - YouTube, accessed on February 16, 2026, https://www.youtube.com/watch?v=fiU5Bk_f4Ls
+The 4M's for Successful Investing: Meaning, Moat, Management, and Margin of Safety, accessed on February 16, 2026, https://www.ruleoneinvesting.com/blog/how-to-invest/the-4ms-for-successful-investing/
+Evaluation and Benchmarking of LLM Agents: A Survey - arXiv.org, accessed on February 16, 2026, https://arxiv.org/html/2507.21504v1
+Distributed Consensus Algorithm for Decision-Making in Multi-agent Multi-armed Bandit, accessed on February 16, 2026, https://www.researchgate.net/publication/380274628_Distributed_Consensus_Algorithm_for_Decision-Making_in_Multi-agent_Multi-armed_Bandit
+Bayesian Methods in Algorithmic Trading – Blog - BlueChip Algos, accessed on February 16, 2026, https://bluechipalgos.com/blog/bayesian-methods-in-algorithmic-trading/
+Bayesian Statistics in Python, accessed on February 16, 2026, https://statsthinking21.github.io/statsthinking21-python/10-BayesianStatistics.html
+Bayesian Statistics in Finance: A Trader's Guide to Smarter Decisions - Interactive Brokers, accessed on February 16, 2026, https://www.interactivebrokers.com/campus/ibkr-quant-news/bayesian-statistics-in-finance-a-traders-guide-to-smarter-decisions/
+Market Regime using Hidden Markov Model - QuantInsti Blog, accessed on February 16, 2026, https://blog.quantinsti.com/regime-adaptive-trading-python/
+PPO Reinforcement Learning Trading Agent - Kaggle, accessed on February 16, 2026, https://www.kaggle.com/code/mahdikhodarahimi/ppo-reinforcement-learning-trading-agent
+Proximal Policy Optimization (PPO) in Finance | by Leo Mercanti | InsiderFinance Wire, accessed on February 16, 2026, https://wire.insiderfinance.io/proximal-policy-optimization-ppo-in-finance-c993a6b75569
+Agentic LLMs for Analyst-Style Financial Insights: An LLM Pipeline for Persuasive Financial Analysis - ACL Anthology, accessed on February 16, 2026, https://aclanthology.org/2025.finnlp-2.25.pdf
+Financial Statement Analysis with Large Language Models - arXiv.org, accessed on February 16, 2026, https://arxiv.org/html/2407.17866v1

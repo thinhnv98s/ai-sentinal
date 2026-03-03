@@ -1,0 +1,240 @@
+Sentinel Giao dịch AI: Khung Đa Tác tử Phân cấp Nhận thức Chế độ cho Quyết định Tài chính
+Tóm tắt Điều hành
+Báo cáo nghiên cứu này trình bày một bản phân tích kiến trúc và lý thuyết toàn diện cho dự án "AI Trading Sentinel" (Lính gác Giao dịch AI), một Hệ thống Đa Tác tử Phân cấp (Hierarchical Multi-Agent System - HMAS) được thiết kế để tự động hóa các quyết định đầu tư với độ chính xác cao. Bằng cách tổng hợp các lý thuyết thị trường kinh điển—cụ thể là Chu kỳ Thị trường Wyckoff và chiến lược đầu tư CANSLIM—với các công nghệ Generative AI tiên tiến nhất của năm 2026, hệ thống được thiết kế để thu hẹp khoảng cách giữa sự tinh tế định tính và độ chính xác định lượng.
+Phân tích này không chỉ dừng lại ở mức độ khái niệm mà đi sâu vào việc tích hợp học thuật nghiêm ngặt, sử dụng các thiết kế mẫu "Tướng quân và Binh lính" (General and Soldier) để giải quyết các vấn đề phối hợp trong các hệ thống tác tử phi tập trung. Đặc biệt, báo cáo cung cấp một mô hình tính toán chi phí thực tế và chi tiết, dựa trên cấu trúc định giá mới nhất của Claude Opus 4.6 và các cơ chế tối ưu hóa bộ nhớ đệm (prompt caching), đảm bảo tính khả thi về mặt kinh tế cho việc triển khai ở quy mô tổ chức.
+1. Giới thiệu: Sự Chuyển dịch sang Kỷ nguyên Tác tử trong Giao dịch Thuật toán
+Sự phát triển của giao dịch thuật toán (algorithmic trading) đã trải qua một quỹ đạo phức tạp, từ các mô hình trung bình động đơn giản đến kinh doanh chênh lệch giá thống kê tần suất cao (HFT) và các mô hình học tăng cường sâu (Deep Reinforcement Learning - DRL). Tuy nhiên, các mô hình định lượng truyền thống đang đối mặt với một "khoảng cách ngữ nghĩa" (semantic gap) nghiêm trọng. Chúng xuất sắc trong việc xử lý dữ liệu chuỗi thời gian dạng số nhưng lại gặp khó khăn trong việc diễn giải các thông tin định tính, phi cấu trúc—như giọng điệu của ngân hàng trung ương, các biến động địa chính trị, hay sự thay đổi tinh tế trong hướng dẫn của doanh nghiệp—những yếu tố thường là động lực chính thúc đẩy các chế độ thị trường (market regimes).1
+1.1 Hạn chế của các Mô hình Định lượng Truyền thống
+Các mô hình định lượng tiêu chuẩn thường thất bại trong các giai đoạn "chuyển đổi chế độ" (regime shifts)—những thời điểm mà các tính chất thống kê cơ bản của thị trường thay đổi hoàn toàn (ví dụ: từ môi trường lạm phát thấp sang lạm phát cao). Được huấn luyện dựa trên các mối tương quan trong quá khứ, các mô hình này có thể tiếp tục thực thi các chiến lược không còn hiệu lực, dẫn đến sụt giảm tài sản (drawdown) đáng kể. Hơn nữa, chúng gần như "mù" trước dữ liệu phi cấu trúc. Đối với một mô hình hồi quy tuyến tính, việc giá cổ phiếu giảm 5% do bê bối CEO hay do điều chỉnh thị trường chung là như nhau về mặt số học. Tuy nhiên, đối với một nhà đầu tư con người, hai kịch bản này đòi hỏi các phản ứng hoàn toàn khác biệt.
+1.2 Sự Trỗi dậy của Hệ thống Tài chính Tác tử (Agentic Financial Systems)
+Sự xuất hiện của "AI Tác tử" (Agentic AI)—các hệ thống có khả năng nhận thức, suy luận, lập kế hoạch và sử dụng công cụ—cung cấp một giải pháp đột phá cho những hạn chế trên. Khác với các mô hình dự đoán thụ động, các tác tử AI có thể tự chủ xây dựng giả thuyết, truy xuất bằng chứng từ bên ngoài và thực hiện các quy trình suy luận đa bước mô phỏng các nhà phân tích con người.3
+Tuy nhiên, việc sử dụng một Mô hình Ngôn ngữ Lớn (LLM) đơn lẻ làm nhà giao dịch là không đủ do các vấn đề như ảo giác (hallucination), cửa sổ ngữ cảnh hạn chế, và khả năng duy trì chiến lược dài hạn kém.2 Điều này đã dẫn đến sự phát triển của Hệ thống Đa Tác tử (Multi-Agent Systems - MAS) trong tài chính. Trong khuôn khổ tác tử, các thực thể AI riêng biệt được gán các vai trò cụ thể—nghiên cứu, quản trị rủi ro, thực thi giao dịch—cho phép sự "phân công lao động" mô phỏng các tổ chức con người.6 Các nghiên cứu từ 2024-2025 đã chứng minh rằng sự cộng tác đa tác tử vượt trội đáng kể so với các kiến trúc đơn tác tử trong việc ra quyết định tài chính.7
+Dự án "AI Trading Sentinel" tận dụng cấu trúc phân cấp này, tổ chức các tác tử thành một chuỗi chỉ huy, nơi các "Tướng quân" (General) chiến lược giám sát các "Binh lính" (Soldier) chiến thuật, đảm bảo rằng các hành động vi mô (mua cổ phiếu) luôn phù hợp với các mục tiêu vĩ mô (bảo toàn vốn và phù hợp với chế độ thị trường).
+1.3 Phạm vi và Phương pháp Tiếp cận
+Báo cáo này không chỉ dừng lại ở việc tích hợp API cơ bản mà đi sâu vào việc áp dụng nghiêm ngặt các lý thuyết tài chính vào kỹ thuật đặt câu lệnh (prompt engineering), sự tổng hợp toán học của niềm tin tác tử (agent beliefs), và kỹ thuật chính xác cần thiết để làm cho hệ thống này khả thi về mặt kinh tế. Chúng tôi sẽ phân tích chi tiết việc tích hợp phương pháp Wyckoff và CANSLIM vào logic tác tử, kiến trúc HMAS, và mô hình chi phí dựa trên hạ tầng AI năm 2026.
+2. Cơ sở Lý thuyết: Số hóa Logic Đầu tư Kinh điển
+Để ngăn chặn AI trở thành một "hộp đen" của nhiễu thống kê, Sentinel được xây dựng dựa trên hai phương pháp đầu tư đã được kiểm chứng qua thời gian: phân tích cấu trúc thị trường của Richard Wyckoff và chiến lược tăng trưởng CANSLIM của William J. O'Neil. Thách thức lớn nhất nằm ở việc chuyển dịch các khung khổ mang tính chủ quan, trực quan và dựa trên quy tắc này thành logic tất định mà các tác tử LLM có thể thực thi một cách đáng tin cậy.
+2.1 Phương pháp Wyckoff: Cấu trúc Thị trường và Nhận diện Chu kỳ
+Được phát triển vào đầu thế kỷ 20, phương pháp Wyckoff định đề rằng hành động giá được thúc đẩy bởi sự chuyển giao quyền sở hữu giữa các nhà giao dịch nhỏ lẻ thiếu thông tin ("tay yếu") và các tổ chức lớn ("tay to" hay Composite Man).9 Việc triển khai điều này trong một tác tử AI đòi hỏi hệ thống phải nhận diện được bốn giai đoạn thị trường riêng biệt: Tích lũy (Accumulation), Tăng giá (Markup), Phân phối (Distribution), và Giảm giá (Markdown).11
+2.1.1 Thuật toán Phát hiện Tích lũy và Phân phối
+"Sentinel" phải sử dụng thị giác máy tính hoặc các bộ mã hóa chuỗi thời gian chuyên biệt để xác định các mẫu hình không gian đặc trưng của các pha Wyckoff. Nghiên cứu gần đây cho thấy Mạng Nơ-ron Tích chập (CNN) có thể xử lý dữ liệu thị trường không gian để phát hiện "vùng giao dịch" (trading ranges) và "kiểm tra thứ cấp" (secondary tests) vốn có trong các mô hình tích lũy.9 Hệ thống phải được lập trình cụ thể để tìm kiếm:
+The Spring (Cú rũ bỏ): Một sự phá vỡ giả xuống dưới mức hỗ trợ nhằm bẫy các nhà giao dịch giá xuống, theo sau là sự phục hồi mạnh mẽ với khối lượng lớn. Đây là tín hiệu mua chính trong logic Wyckoff.12
+Sign of Strength (SOS - Dấu hiệu Sức mạnh): Giá tăng kèm theo sự mở rộng của chênh lệch giá (spread) và khối lượng, cho thấy nhu cầu từ các tổ chức.12
+Phân kỳ Khối lượng-Giá (Volume-Price Divergence): Tác tử phải được lập trình với "Quy luật Nỗ lực so với Kết quả" (Law of Effort vs. Result), phân tích các trường hợp khối lượng lớn (nỗ lực) nhưng giá ít thay đổi (kết quả), báo hiệu khả năng đảo chiều do sự hấp thụ (absorption).11
+Một "Tác tử Tích lũy" trong kiến trúc Sentinel sẽ không chỉ theo dõi giá; nó sẽ phân tích chất lượng của chuyển động giá, phân biệt giữa sự củng cố điều chỉnh và sự tích lũy thực sự của "Dòng tiền thông minh".10
+2.2 CANSLIM: Tư duy Heuristic cho Lựa chọn Cổ phiếu Tăng trưởng
+Trong khi Wyckoff cung cấp câu trả lời cho "khi nào" (thời điểm), CANSLIM cung cấp câu trả lời cho "cái gì" (lựa chọn). Chiến lược này đòi hỏi phân tích đa phương thức bao gồm cả dữ liệu tài chính cơ bản và hành động giá kỹ thuật.14 Việc triển khai CANSLIM trong môi trường AI đòi hỏi sự phân rã nhiệm vụ chính xác cho các tác tử chuyên biệt:
+
+Tiêu chí
+Tác tử Chịu trách nhiệm
+Nhiệm vụ Phân tích & Logic
+C (Current Earnings)
+Tác tử Cơ bản
+Xác thực EPS quý hiện tại tăng trưởng > 18-20% so với cùng kỳ. Phân tích báo cáo tài chính (10-Q/BCTC quý) để loại bỏ các khoản lợi nhuận bất thường. 15
+A (Annual Earnings)
+Tác tử Cơ bản
+Kiểm tra tăng trưởng EPS hàng năm trong 3-5 năm (CAGR > 25%). Đảm bảo ROE > 17%. 15
+N (New)
+Tác tử Tin tức
+Đây là thách thức định tính. Yếu tố "Mới" (sản phẩm, quản lý, đỉnh giá mới) đòi hỏi phân tích ngữ nghĩa. Tác tử LLM phải đọc thông cáo báo chí để xác định xem "sản phẩm mới" có ý nghĩa vật chất (material impact) hay chỉ là bản cập nhật nhỏ. 14
+S (Supply/Demand)
+Tác tử Kỹ thuật
+Phân tích khối lượng tại các điểm xoay chiều (pivot points); tìm kiếm nhu cầu cao (khối lượng lớn) trong các pha tăng giá và cạn cung trong các pha điều chỉnh. 16
+L (Leader/Laggard)
+Tác tử Kỹ thuật
+Tính toán Sức mạnh Tương đối (Relative Strength - RS) so với chỉ số thị trường chung (VN-Index/S&P 500) và các đối thủ trong ngành. Loại bỏ các cổ phiếu tụt hậu (Laggards). 14
+I (Institutional)
+Tác tử Cơ bản
+Phân tích dữ liệu sở hữu (13F hoặc báo cáo quản trị) để đếm số lượng quỹ bảo trợ chất lượng cao. Phát hiện sự tích lũy của "Dòng tiền thông minh". 15
+M (Market Direction)
+Tướng quân Vĩ mô
+Xác định chế độ thị trường tổng thể (Uptrend, Downtrend, Correction) để cấp quyền hoặc chặn hoạt động giao dịch. 16
+
+2.3 Khung Phân tích Cơ bản "4M"
+Để đảm bảo tính bền vững dài hạn và tránh các bẫy giá trị, hệ thống tích hợp khung "4M" của Phil Town, yêu cầu khả năng suy luận sâu hơn từ các mô hình ngôn ngữ 17:
+Meaning (Ý nghĩa - Vòng tròn Năng lực): Tác tử sử dụng bản đồ tri thức (ontology) để đảm bảo chỉ phân tích các ngành mà dữ liệu huấn luyện có độ tin cậy cao.
+Moat (Lợi thế Cạnh tranh): Tác tử Cơ bản thực hiện phân tích văn bản trên các phần "Rủi ro" và "Cạnh tranh" trong báo cáo thường niên (10-K) để xác định các từ khóa liên quan đến "hiệu ứng mạng", "chi phí chuyển đổi", hoặc "bảo hộ thương hiệu". Nó tìm kiếm sự bền vững về ngữ nghĩa của các lợi thế này theo thời gian.17
+Management (Ban Lãnh đạo): Tác tử Cảm xúc (Sentiment Agent) phân tích biên bản các cuộc họp báo cáo thu nhập (earnings call transcripts). Nó đánh giá giọng điệu của CEO về sự tự tin, minh bạch hay lảng tránh, sử dụng các mô hình phân tích ngôn ngữ học tâm lý.17
+Margin of Safety (Biên độ An toàn): Tác tử tính toán giá trị nội tại (sử dụng DCF, P/E) và chỉ cho phép giao dịch nếu giá hiện tại thấp hơn đáng kể (ví dụ: 20-30%) so với giá trị này, tạo lớp bảo vệ chống lại sai số mô hình.17
+3. Kiến trúc Hệ thống Đa Tác tử Phân cấp (HMAS)
+Sự phức tạp của việc tích hợp Wyckoff, CANSLIM và 4M đòi hỏi một Hệ thống Đa Tác tử Phân cấp (HMAS). Một kiến trúc phẳng, nơi tất cả các tác tử giao tiếp ngang hàng, sẽ dẫn đến tắc nghẽn giao tiếp và "sự hỗn loạn", gây ra độ trễ cao và chi phí token khổng lồ.19 Chúng tôi đề xuất mô hình thiết kế "Tướng quân và Binh lính" (General and Soldier) để đảm bảo tính nhất quán trong ra quyết định.20
+3.1 Mô hình Thiết kế "Tướng quân và Binh lính"
+Mô hình này tách biệt sự giám sát chiến lược khỏi việc thực thi chiến thuật. Hệ thống phân cấp bao gồm ba lớp chính 19:
+3.1.1 Cấp độ 1: Tướng quân Vĩ mô (Lớp Chiến lược)
+Vai trò: Giám đốc Đầu tư (CIO). Nó không quan tâm đến từng cổ phiếu riêng lẻ mà tập trung vào sức khỏe tổng thể của thị trường.
+Chức năng: Giám sát yếu tố "M" trong CANSLIM và chu kỳ Wyckoff của các chỉ số chính (VN-Index, S&P 500). Nó xác định "Chế độ" (Regime): Risk-On (Chấp nhận rủi ro) hoặc Risk-Off (Né tránh rủi ro).
+Cơ chế Gating (Cổng kiểm soát): Nếu Tướng quân tuyên bố "Thị trường Gấu", nó sẽ phát đi chỉ thị cho các tác tử cấp dưới ngừng mọi hoạt động mua mới hoặc chuyển sang chiến lược bán khống. Sự "lọc trước từ trên xuống" (top-down pre-filtering) này giúp giảm thiểu lãng phí tính toán bằng cách ngăn chặn việc phân tích chi tiết các cổ phiếu trong bối cảnh thị trường bất lợi.21
+3.1.2 Cấp độ 2: Quản lý Danh mục (Lớp Phân bổ)
+Vai trò: Người phân bổ vốn. Nhận vốn từ Tướng quân và phân phối cho các chiến lược hoặc ngành cụ thể.
+Chức năng: Tổng hợp tín hiệu từ các chuyên gia phân tích bên dưới. Sử dụng Học tăng cường (Reinforcement Learning - RL), nó linh hoạt điều chỉnh trọng số ý kiến của các tác tử Cơ bản, Kỹ thuật và Tin tức dựa trên độ chính xác hiệu suất gần đây của họ trong chế độ thị trường hiện tại.21
+3.1.3 Cấp độ 3: Các Binh lính Chuyên biệt (Lớp Thực thi/Phân tích)
+Đây là các tác tử chuyên sâu, mỗi tác tử được tinh chỉnh cho một miền phân tích cụ thể:
+Tác tử Cơ bản (Fundamental Agent): Chuyên gia về 4M và CANSLIM (C, A, N). Phân tích báo cáo tài chính và tính toán giá trị nội tại.
+Tác tử Kỹ thuật (Technical Agent): Chuyên gia về Wyckoff và CANSLIM (S, L). Sử dụng thị giác máy tính hoặc chuỗi thời gian để phát hiện "Springs" hoặc "Breakouts".
+Tác tử Tin tức/Cảm xúc (News Agent): Sử dụng LLM để phân tích tin tức phi cấu trúc, xác minh yếu tố "N" và đánh giá chất lượng "Management".21
+Hộ vệ Rủi ro (Risk Guardian): Một tác tử ràng buộc (constraint agent) chuyên biệt. Nó có quyền phủ quyết (veto) mọi giao dịch nếu vi phạm các giới hạn về quy mô vị thế hoặc độ biến động (Stop-loss, Drawdown limits), bất kể tiềm năng lợi nhuận.20
+3.2 Giao thức Giao tiếp và Dòng Dữ liệu
+Để tránh "hiệu ứng tam sao thất bản" (telephone effect) khi thông tin bị biến dạng qua các chuỗi hội thoại dài 23, giao tiếp phải được cấu trúc hóa nghiêm ngặt:
+Trao đổi JSON: Các tác tử giao tiếp thông qua các đối tượng JSON chuẩn hóa thay vì văn bản tự do. Điều này loại bỏ sự mơ hồ và giảm chi phí token.
+Bảng Đen Toàn cục (Global Blackboard): Thay vì gửi tin nhắn qua lại, các tác tử ghi kết quả phân tích của họ vào một "Trạng thái Toàn cục" được chia sẻ. Quản lý Danh mục đọc từ trạng thái này để ra quyết định.23
+Kiến trúc Hướng Sự kiện (Event-Driven): Thay vì liên tục hỏi "Có tin gì mới không?", hệ thống sử dụng kiến trúc hướng sự kiện. Tác tử Kỹ thuật chỉ "thức dậy" và tiêu tốn chi phí tính toán khi nhận được sự kiện "Giá phá vỡ ngưỡng X" từ luồng dữ liệu.24
+4. Chiến lược Triển khai LLM Nâng cao
+Trí tuệ của Sentinel dựa trên việc triển khai hiệu quả các Mô hình Ngôn ngữ Lớn. Trong bối cảnh công nghệ năm 2026, chúng tôi phân tích việc sử dụng dòng mô hình Claude của Anthropic do khả năng suy luận vượt trội, cửa sổ ngữ cảnh lớn và các tính năng tối ưu chi phí.25
+4.1 Lựa chọn Mô hình: Opus vs. Haiku
+Claude Opus 4.6 (Tướng quân/Quản lý): Được sử dụng cho suy luận cấp cao, tổng hợp phức tạp các tín hiệu xung đột và ra quyết định cuối cùng. Tính năng "Suy nghĩ Thích ứng" (Adaptive Thinking) cho phép nó tự chủ quyết định khi nào cần suy luận sâu hơn cho các nhiệm vụ phức tạp (ví dụ: xác minh "Moat" theo tiêu chí 4M).26 Với mức giá $5.00/1M token đầu vào, nó hiệu quả về chi phí cho các quyết định giá trị cao.27
+Claude Haiku 4.5 (Binh lính): Được sử dụng cho các tác vụ khối lượng lớn, độ trễ thấp như tóm tắt tin tức, trích xuất dữ liệu báo cáo tài chính và phân loại cảm xúc ban đầu. Với mức giá $1.00/1M token đầu vào, nó cho phép xử lý song song hàng nghìn mã cổ phiếu mà không gây tốn kém quá mức.27
+4.2 Kỹ thuật Prompt Engineering: "Extended Thinking" và Neurosymbolic
+Để ngăn chặn các lỗi tư duy bốc đồng ("hệ thống 1") phổ biến ở LLM, Sentinel áp dụng các giao thức "Tư duy Mở rộng" (Extended Thinking).
+Tư duy Thích ứng (Adaptive Thinking): Khả năng "suy nghĩ" trước khi trả lời của Opus 4.6 là rất quan trọng. Prompt phải hướng dẫn mô hình rõ ràng: "Đầu tiên, xác định chế độ thị trường. Thứ hai, đánh giá từng tiêu chí CANSLIM theo từng bước. Thứ ba, đối chiếu với các pha Wyckoff. Cuối cùng, đưa ra quyết định.".25
+Xác minh Thần kinh - Ký hiệu (Neurosymbolic Verification - VERAFI): Dữ liệu tài chính không chấp nhận sự ảo giác. Khung VERAFI tích hợp một lớp "thần kinh - ký hiệu", nơi đầu ra của LLM được kiểm tra dựa trên các quy tắc tất định (ví dụ: "Nếu Tăng trưởng EPS < 18%, suy ra CANSLIM Thất bại"). Cách tiếp cận lai này kết hợp sự linh hoạt của LLM với sự cứng nhắc của logic code để đảm bảo tuân thủ quy định và toán học.30
+4.3 Giảm thiểu Ảo giác: Đường ống Kiểm chứng (Fact-Check Pipeline)
+Hệ thống phải sử dụng một "Đường ống Kiểm chứng Sự thật".31 Khi Tác tử Tin tức xác định một "Sản phẩm Mới", một "Tác tử Xác minh" thứ cấp phải thực hiện tìm kiếm có mục tiêu (sử dụng Tavily API) để xác nhận sự tồn tại và ngày ra mắt của sản phẩm, đảm bảo tín hiệu không phải là ảo giác.5 Việc quy kết nguồn (Source Attribution) là bắt buộc; mọi tín hiệu phải đi kèm với URL hoặc ID tài liệu tham chiếu.30
+5. Thu thập Dữ liệu & Xử lý Tín hiệu: Con mắt của Sentinel
+Hệ thống suy luận chỉ tốt ngang với dữ liệu đầu vào. Chúng tôi sử dụng Tavily API làm cổng chính để truy cập thông tin web thời gian thực, được tối ưu hóa cho các tác tử AI.32
+5.1 Tình báo Web Thời gian thực qua Tavily
+Tavily cung cấp tham số search_depth rất quan trọng cho các phân tích tài chính sâu:
+search_depth="advanced": Được sử dụng bởi Tác tử Cơ bản để thực hiện nghiên cứu chuyên sâu về nền tảng công ty, đối thủ cạnh tranh và hào kinh tế (moat). Chế độ này thu thập thông tin từ nhiều trang hơn và trích xuất nội dung sâu hơn, cần thiết cho phân tích định tính "4M". Chi phí là 2 tín dụng (credits) mỗi lần gọi.32
+topic="news": Được sử dụng bởi Tác tử Cảm xúc để lấy các tiêu đề mới nhất nhằm phản ứng ngay lập tức với báo cáo thu nhập hoặc cú sốc địa chính trị. Nên kết hợp với days=1 để đảm bảo tính thời sự.35
+include_domains: Để đảm bảo chất lượng dữ liệu, các cuộc gọi API cần được giới hạn trong các miền tài chính uy tín. Đối với thị trường Việt Nam, hệ thống được cấu hình để ưu tiên các nguồn tin cậy như vietstock.vn, cafef.vn, tinnhanhchungkhoan.vn, và các trang web chính thức của sở giao dịch (hsx.vn, hnx.vn).37
+5.2 Lọc Tin tức Tài chính và Chấm điểm Cảm xúc
+Hệ thống xử lý tin tức qua một bộ lọc heuristic để loại bỏ nhiễu.21
+Độ tin cậy nguồn tin: Chỉ các nguồn báo chí tài chính được công nhận và hồ sơ pháp lý mới được nhập liệu.
+Chấm điểm Mức độ Liên quan: Một LLM (Haiku) tiền xử lý các tiêu đề để xác định xem tin tức có phải là "Trọng yếu" (Material - có khả năng di chuyển giá) hay "Nhiễu".
+Cực tính Cảm xúc: Tác tử Tin tức gán điểm cảm xúc () từ -1 (Tiêu cực) đến +1 (Tích cực), điểm số này sẽ được đưa vào công thức tổng hợp của Quản lý Danh mục.21
+6. Tổng hợp Tín hiệu: Cốt lõi Toán học
+Việc chuyển từ các ý kiến tác tử riêng lẻ sang một quyết định giao dịch thống nhất được điều chỉnh bởi sự chặt chẽ của toán học, không phải bỏ phiếu đơn thuần.
+6.1 Cơ chế Đồng thuận Bayes (Bayesian Consensus)
+Quản lý Danh mục hoạt động như một bộ cập nhật Bayes. Nó giữ một niềm tin "Tiên nghiệm" (Prior) về xác suất tăng giá của cổ phiếu. Khi nhận được "Bằng chứng" mới từ các Binh lính (ví dụ: Tác tử Kỹ thuật phát hiện cú "Spring"), Quản lý sẽ cập nhật niềm tin này bằng Định lý Bayes.38
+
+Điểm Tin cậy: Thuật ngữ  đại diện cho độ tin cậy lịch sử của tác tử cung cấp tín hiệu. Nếu Tác tử Kỹ thuật đã chính xác trong chế độ biến động hiện tại, tín hiệu của nó sẽ có trọng số "khả năng xảy ra" (likelihood) cao hơn.
+Giải quyết Xung đột: Nếu Tác tử Kỹ thuật đáng tin cậy nói "Mua" và Tác tử Tin tức kém tin cậy hơn nói "Bán", toán học Bayes sẽ tự nhiên ủng hộ Tác tử Kỹ thuật, cho phép hệ thống giải quyết xung đột một cách định lượng.39
+6.2 Học Tăng cường (RL) để Tối ưu hóa Trọng số
+Để làm cho hệ thống thích ứng, chúng tôi sử dụng thuật toán Tối ưu hóa Chính sách Gần (Proximal Policy Optimization - PPO) để điều chỉnh động sự ảnh hưởng của từng tác tử.41
+Không gian Trạng thái (): Bao gồm độ biến động thị trường (VIX), hiệu suất tác tử gần đây, và các chỉ số vĩ mô.
+Không gian Hành động (): Vector trọng số gán cho các tác tử Cơ bản, Kỹ thuật và Tin tức.
+Hàm Phần thưởng (): Tối đa hóa Chỉ số Sharpe (lợi nhuận điều chỉnh rủi ro) thay vì lợi nhuận thô. Điều này phạt các tác tử chấp nhận rủi ro quá mức.21
+Trong chế độ "Thị trường Bò", mô hình RL có thể học cách tăng trọng số cho tác tử "Động lượng/Kỹ thuật". Trong "Thị trường Gấu", nó có thể chuyển trọng tâm sang tác tử "Cơ bản" (tìm kiếm giá trị/an toàn) hoặc tác tử "Rủi ro".43
+6.3 Logic Chuyển đổi Nhận thức Chế độ (Regime-Aware)
+Một thất bại nghiêm trọng của các bot đơn giản là "Sự cứng nhắc về Chế độ". Sentinel sử dụng khung FinPos, một hệ thống nhận thức vị thế và chế độ.44 Tướng quân Vĩ mô phân loại thị trường thành các chế độ (ví dụ: Chế độ 1: Bò, Chế độ 2: Gấu, Chế độ 3: Đi ngang) và logic tổng hợp sẽ thay đổi tương ứng.45
+7. Phân tích Tài chính và Mô hình Chi phí Thực tế
+Đây là phần phân tích chi tiết về tính khả thi kinh tế, được tính toán dựa trên các mức giá và thông số kỹ thuật mới nhất năm 2026.
+7.1 Giả định Mô hình Hoạt động
+Chúng ta giả định một hệ thống hoạt động ở quy mô vừa phải cho một quỹ đầu tư hoặc nhà giao dịch chuyên nghiệp:
+Danh mục theo dõi (Watchlist): 500 mã cổ phiếu (ví dụ: VN30 + Midcaps tiêu biểu).
+Tần suất phân tích:
+Kỹ thuật: Mỗi 15 phút (trong giờ giao dịch 4.5 tiếng) = 18 lần/ngày.
+Tin tức: Mỗi giờ = 5 lần/ngày (hoặc theo sự kiện).
+Cơ bản: 1 lần/ngày (cuối ngày hoặc khi có báo cáo mới).
+Số lượng tác tử: 3 tác tử phân tích chính + 1 quản lý.
+7.2 Phân tích Chi phí Token (Tokenomics)
+Dựa trên bảng giá Claude Opus 4.6 và Haiku 4.5 28:
+Opus 4.6: Input $5.00/1M, Output $25.00/1M. Cache Write $6.25/1M, Cache Read $0.50/1M.
+Haiku 4.5: Input $1.00/1M, Output $5.00/1M. Cache Read $0.10/1M (ước tính 10% base).
+7.2.1 Chiến lược Tối ưu hóa: Prompt Caching
+Prompt hệ thống (chứa định nghĩa Wyckoff, quy tắc CANSLIM, logic 4M) rất dài, giả sử khoảng 10,000 token.
+Nếu không có Caching (Mỗi lần gọi gửi lại toàn bộ prompt):
+Chi phí Input cho 500 mã x 18 lần/ngày x 10k token = 90M token/ngày.
+Chi phí Haiku: 90 * $1 = $90/ngày (quá cao cho quy mô nhỏ).
+Sử dụng Prompt Caching 27:
+Cache Write (Ghi 1 lần): 10k token * $1.25/1M = $0.0125 (Rất rẻ).
+Cache Read (Đọc nhiều lần): 90M token * $0.10/1M = $9.00/ngày.
+Tiết kiệm: ~90% chi phí input. Đây là yếu tố then chốt biến mô hình từ lý thuyết thành thực tế.
+7.2.2 Chi phí Dữ liệu (Tavily)
+Gói "Production" của Tavily (giả định): $220/tháng cho 38,000 credits, hoặc Pay-as-you-go $0.008/credit.32
+Nhu cầu: 500 mã * 1 lần search tin tức/ngày = 500 credits/ngày (sử dụng Batch hoặc gộp query).
+Chi phí Tavily: ~$4/ngày.
+7.3 Tổng Chi phí Vận hành Ước tính (Hàng tháng)
+Hạng mục
+Chi tiết Tính toán (Ước lượng)
+Chi phí Tháng (USD)
+LLM Compute (Haiku 4.5)
+Xử lý dữ liệu thô, phân tích kỹ thuật (Cached)
+$300 - $450
+LLM Compute (Opus 4.6)
+Ra quyết định chiến lược, tổng hợp (Dùng ít, giá cao)
+$150 - $200
+Dữ liệu (Tavily API)
+Tìm kiếm tin tức, xác thực sự kiện
+$150 - $220
+Hạ tầng (Server/DB)
+AWS Lambda, Vector DB (Pinecone/Chroma), Database
+$50 - $100
+Tổng cộng
+
+
+~$650 - $970
+
+Nhận định: Với chi phí vận hành dưới $1,000/tháng, hệ thống này hoàn toàn khả thi cho một quỹ đầu tư nhỏ hoặc một nhóm nhà đầu tư chuyên nghiệp, nơi lợi nhuận từ việc tránh được một quyết định sai lầm (nhờ Risk Guardian) có thể bù đắp chi phí cả năm.
+8. Quản trị Rủi ro & Tuân thủ
+Sự sống còn là mục tiêu hàng đầu. Sentinel tích hợp khung rủi ro nghiêm ngặt.
+8.1 Tác tử Hộ vệ Rủi ro (Risk Guardian Agent)
+Tác tử này hoạt động độc lập với các tác tử tìm kiếm lợi nhuận. Nó thực thi các ràng buộc cứng:
+Quy mô Vị thế Động: Quy mô vị thế được xác định bởi độ biến động (ATR). Biến động cao = Quy mô nhỏ. Điều này đảm bảo rủi ro tính bằng tiền (dollar risk) trên mỗi giao dịch được giữ cố định (ví dụ: 1% vốn) bất kể thị trường điên rồ thế nào.44
+Giới hạn Tương quan: Ngăn chặn việc mua quá nhiều cổ phiếu trong cùng một ngành (ví dụ: Ngân hàng), tránh rủi ro tập trung.
+8.2 Dừng lỗ Động và Cấu trúc
+Dừng lỗ không phải là tĩnh (ví dụ: "bán khi giảm 7%"). Chúng là động và dựa trên cấu trúc:
+Dừng lỗ Kỹ thuật: Đặt dưới các mức hỗ trợ Wyckoff quan trọng (ví dụ: dưới đáy của cú "Spring").
+Trailing Stops: Khi giá di chuyển có lợi (Pha Markup), tác tử nâng mức dừng lỗ lên để khóa lợi nhuận, tuân thủ nguyên tắc "cắt lỗ sớm, để lãi chạy" của CANSLIM.12
+9. Kết luận
+"Sentinel Giao dịch AI" đại diện cho sự hội tụ tinh vi giữa lý thuyết tài chính và năng lực AI hiện đại. Bằng cách nhúng logic của Wyckoff và CANSLIM vào một Hệ thống Đa Tác tử Phân cấp, sử dụng mô hình "Tướng quân và Binh lính" để điều phối, và vận dụng toán học Bayes/RL để tổng hợp tín hiệu, hệ thống giải quyết được các điểm yếu cốt lõi của cả nhà giao dịch con người (cảm xúc, giới hạn sự chú ý) và thuật toán truyền thống (thiếu sắc thái, cứng nhắc).
+Quan trọng hơn, kiến trúc này được xây dựng dựa trên thực tế kỹ thuật của năm 2026. Nó giảm thiểu ảo giác thông qua VERAFI và Quy trình Kiểm chứng, tối ưu hóa chi phí thông qua Prompt Caching và Batch API, và đảm bảo sự bền vững thông qua quản trị rủi ro Nhận thức Chế độ. Mặc dù không hệ thống nào có thể đảm bảo lợi nhuận tuyệt đối, Sentinel cung cấp một khung khổ khoa học, minh bạch và thích ứng để điều hướng sự phức tạp của thị trường tài chính hiện đại, đặc biệt là trong bối cảnh thị trường mới nổi như Việt Nam.
+Tài liệu Tham khảo & Nguồn Dữ liệu
+Wyckoff & Cấu trúc Thị trường: 9
+Chiến lược CANSLIM & 4M: 2
+Kiến trúc HMAS & Tướng quân/Binh lính: 19
+Mô hình LLM (Claude) & Định giá: 25
+Rủi ro & Nhận thức Chế độ: 43
+Dữ liệu & Tavily: 32
+Mô hình Toán học/RL: 38
+Kiểm chứng/VERAFI: 30
+Works cited
+(PDF) THE IMPACT OF AI ON ALGORITHMIC TRADING: HOW AI ALGORITHMS ARE CHANGING THE LANDSCAPE OF STOCK TRADING, INCLUDING THE ETHICAL IMPLICATIONS - ResearchGate, accessed on February 16, 2026, https://www.researchgate.net/publication/380732108_THE_IMPACT_OF_AI_ON_ALGORITHMIC_TRADING_HOW_AI_ALGORITHMS_ARE_CHANGING_THE_LANDSCAPE_OF_STOCK_TRADING_INCLUDING_THE_ETHICAL_IMPLICATIONS
+Integrating Large Language Models in Financial Investments and Market Analysis: A Survey - arXiv.org, accessed on February 16, 2026, https://arxiv.org/pdf/2507.01990
+A Comprehensive Review of AI Agents: Transforming Possibilities in Technology and Beyond - arXiv, accessed on February 16, 2026, https://arxiv.org/html/2508.11957v1
+Demystifying AI Agents in 2025: Separating Hype From Reality and Navigating Market Outlook | Alvarez & Marsal, accessed on February 16, 2026, https://www.alvarezandmarsal.com/thought-leadership/demystifying-ai-agents-in-2025-separating-hype-from-reality-and-navigating-market-outlook
+Mitigating Hallucination in Large Language Models (LLMs): An Application-Oriented Survey on RAG, Reasoning, and Agentic Systems - arXiv, accessed on February 16, 2026, https://arxiv.org/html/2510.24476v1
+The agentic organization: A new operating model for AI | McKinsey, accessed on February 16, 2026, https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/the-agentic-organization-contours-of-the-next-paradigm-for-the-ai-era
+(PDF) Hierarchical AI Multi-Agent Fundamental Investing: Evidence from China's A-Share Market - ResearchGate, accessed on February 16, 2026, https://www.researchgate.net/publication/396924240_Hierarchical_AI_Multi-Agent_Fundamental_Investing_Evidence_from_China's_A-Share_Market
+Large Language Model Agents in Finance: A Survey Bridging Research, Practice, and Real-World Deployment - ACL Anthology, accessed on February 16, 2026, https://aclanthology.org/2025.findings-emnlp.972.pdf
+Long Short-Term Memory Pattern Recognition in Currency Trading - arXiv, accessed on February 16, 2026, https://arxiv.org/html/2403.18839v1
+Wyckoff Accumulation Trading Strategy Understanding Market Cycles - Bookmap, accessed on February 16, 2026, https://bookmap.com/blog/wyckoff-trading-strategy-understanding-market-cycles
+Wyckoff Method Theory & Patterns of Accumulation and Distribution - LiteFinance, accessed on February 16, 2026, https://www.litefinance.org/blog/for-professionals/wyckoff-method/
+Wyckoff Accumulation: A Pattern Essentials Guide - LuxAlgo, accessed on February 16, 2026, https://www.luxalgo.com/blog/wyckoff-accumulation-a-pattern-essentials-guide/
+The Wyckoff Method: An Advanced Guide for Crypto Traders - Tradetomato Academy, accessed on February 16, 2026, https://academy.tradetomato.com/the-wyckoff-method-an-advanced-guide-for-crypto-traders-2911fe11d2b5
+CanSwim: A deep learning indicator for CANSLIM Practitioners | by Ivelin Ivanov - Medium, accessed on February 16, 2026, https://medium.com/@ivelin.atanasoff.ivanov/canswim-a-deep-learning-tool-for-canslim-practitioners-2c9740bb0d3d
+CANSLIM | Desjardins Online Brokerage - Disnat, accessed on February 16, 2026, https://www.disnat.com/en/learning/trading-basics/stock-selection-strategies/canslim
+CAN SLIM - Definition, How It Works, Growth Characteristics - Corporate Finance Institute, accessed on February 16, 2026, https://corporatefinanceinstitute.com/resources/equities/can-slim/
+The 4M's for Successful Investing: Meaning, Moat, Management, and Margin of Safety, accessed on February 16, 2026, https://www.ruleoneinvesting.com/blog/how-to-invest/the-4ms-for-successful-investing/
+The Agentic AI Moat: How Aviso Future-Proofs Revenue Growth, accessed on February 16, 2026, https://www.aviso.com/blog/the-agentic-ai-moat-built-by-aviso-ai
+What are Hierarchical AI Agents? - IBM, accessed on February 16, 2026, https://www.ibm.com/think/topics/hierarchical-ai-agents
+FINCON: A Synthesized LLM Multi-Agent System with Conceptual Verbal Reinforcement for Enhanced Financial Decision Making - NIPS, accessed on February 16, 2026, https://proceedings.neurips.cc/paper_files/paper/2024/file/f7ae4fe91d96f50abc2211f09b6a7e49-Paper-Conference.pdf
+Hierarchical AI Multi-Agent Fundamental Investing: Evidence from China's A-Share Market - arXiv, accessed on February 16, 2026, https://arxiv.org/pdf/2510.21147
+QuantAgents: Towards Multi-agent Financial System via Simulated Trading - arXiv, accessed on February 16, 2026, https://arxiv.org/html/2510.04643v1
+[2412.20138] TradingAgents: Multi-Agents LLM Financial Trading Framework - arXiv, accessed on February 16, 2026, https://arxiv.org/abs/2412.20138
+Event-Driven Architecture - Amazon AWS, accessed on February 16, 2026, https://aws.amazon.com/event-driven-architecture/
+Claude Opus 4.6 - Anthropic, accessed on February 16, 2026, https://www.anthropic.com/claude/opus
+Introducing Claude Opus 4.6 - Anthropic, accessed on February 16, 2026, https://www.anthropic.com/news/claude-opus-4-6
+Anthropic Claude API Pricing 2026: Complete Cost Breakdown - MetaCTO, accessed on February 16, 2026, https://www.metacto.com/blogs/anthropic-api-pricing-a-full-breakdown-of-costs-and-integration
+Claude Opus 4.6 Pricing: Complete Guide to API Costs, Subscriptions & Savings (2026), accessed on February 16, 2026, https://www.aifreeapi.com/en/posts/claude-opus-4-pricing
+Introducing Claude Haiku 4.5 - Anthropic, accessed on February 16, 2026, https://www.anthropic.com/news/claude-haiku-4-5
+VERAFI: Verified Agentic Financial Intelligence through Neurosymbolic Policy Generation, accessed on February 16, 2026, https://arxiv.org/html/2512.14744v1
+FinVet: A Collaborative Framework of RAG and External Fact-Checking Agents for Financial Misinformation Detection - arXiv, accessed on February 16, 2026, https://arxiv.org/html/2510.11654v1
+Credits & Pricing - Tavily Docs, accessed on February 16, 2026, https://docs.tavily.com/documentation/api-credits
+Tavily, accessed on February 16, 2026, https://tavily.com/
+What We Shipped: January 2026 | Tavily Blog, accessed on February 16, 2026, https://www.tavily.com/blog/what-tavily-shipped-in-january-26
+Searching recent news using Tavily API, accessed on February 16, 2026, https://community.tavily.com/t/searching-recent-news-using-tavily-api/865
+Best Practices for Search - Tavily Docs, accessed on February 16, 2026, https://docs.tavily.com/documentation/best-practices/best-practices-search
+Your AI Financial Analyst: A Deep Dive into the Stock News Search MCP Server, accessed on February 16, 2026, https://skywork.ai/skypage/en/ai-financial-analyst-stock-news/1979103969185931264
+Bayesian Statistics in Finance: A Trader's Guide to Smarter Decisions - Interactive Brokers, accessed on February 16, 2026, https://www.interactivebrokers.com/campus/ibkr-quant-news/bayesian-statistics-in-finance-a-traders-guide-to-smarter-decisions/
+Multi-Agent Cooperative Control Consensus: A Comparative Review - MDPI, accessed on February 16, 2026, https://www.mdpi.com/2079-9292/7/2/22
+Consensus and Cooperation in NetworkedMulti-AgentSystems - Lab Groups, accessed on February 16, 2026, https://labs.engineering.asu.edu/acs/wp-content/uploads/sites/33/2016/09/Consensus-and-Cooperation-in-Networked-Multi-Agent-Systems-2007.pdf
+TradingAgents: Multi-Agents LLM Financial Trading Framework - arXiv, accessed on February 16, 2026, https://arxiv.org/pdf/2412.20138
+Hierarchical Multi-Agent System with Bayesian Neural Networks for Portfolio Optimization, accessed on February 16, 2026, https://www.iieta.org/journals/mmep/paper/10.18280/mmep.120417
+Can LLM-based Financial Investing Strategies Outperform the Market in Long Run?, accessed on February 16, 2026, https://arxiv.org/html/2505.07078v2
+FinPos: A Position-Aware Trading Agent System for Real Financial Markets - arXiv, accessed on February 16, 2026, https://arxiv.org/html/2510.27251v2
+[2509.11420] Trading-R1: Financial Trading with LLM Reasoning via Reinforcement Learning - arXiv, accessed on February 16, 2026, https://arxiv.org/abs/2509.11420
+Hi-DARTS: Hierarchical Dynamically Adapting Reinforcement Trading System - arXiv, accessed on February 16, 2026, https://arxiv.org/html/2509.12048v1
+Claude Opus 4.6 Pricing Guide 2026: API Costs, Plans, and How to Save 50%+, accessed on February 16, 2026, https://blog.laozhang.ai/en/posts/claude-opus-4-6-pricing-subscription-guide
+Prompt Caching: The Secret to 60% Cost Reduction in LLM Applications | by Hardik Sonetta, accessed on February 16, 2026, https://medium.com/tr-labs-ml-engineering-blog/prompt-caching-the-secret-to-60-cost-reduction-in-llm-applications-6c792a0ac29b
+Hierarchical Multi-Agent Systems: Concepts and Operational Considerations - Over Coffee, accessed on February 16, 2026, https://overcoffee.medium.com/hierarchical-multi-agent-systems-concepts-and-operational-considerations-e06fff0bea8c
+Distributed Bipartite Consensus of Multi-Agent Systems via Disturbance Rejection Control Strategy - MDPI, accessed on February 16, 2026, https://www.mdpi.com/2227-7390/12/20/3225
